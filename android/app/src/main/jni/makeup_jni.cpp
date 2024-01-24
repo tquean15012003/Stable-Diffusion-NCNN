@@ -113,7 +113,7 @@ JNIEXPORT jboolean JNICALL Java_com_tencent_makeup_StableDiffusion_txt2imgProces
     ncnn::Mat cond = prompt_slover.get_conditioning(positive_prompt);
     ncnn::Mat uncond = prompt_slover.get_conditioning(negative_prompt);
 
-    ncnn::Mat sample = diffusion_slover.sampler_txt2img(seed, step, cond, uncond);
+    ncnn::Mat sample = diffusion_slover.sampler_txt2img(seed, step, cond, uncond, true, 4);
 
     ncnn::Mat x_samples_ddim = decode_slover.decode(sample);
 
