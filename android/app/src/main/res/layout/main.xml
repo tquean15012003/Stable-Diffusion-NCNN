@@ -13,8 +13,11 @@
             android:id="@+id/init"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:backgroundTint="#673AB7"
+            android:text="open"
             android:textAllCaps="false"
-            android:text="open" />
+            android:textColor="#FFFFFF"
+            android:textColorLink="#FFFFFF" />
 
         <EditText
             android:id="@+id/step"
@@ -22,7 +25,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:ems="10"
-            android:hint="Setp"
+            android:hint="Step"
             android:inputType="textPersonName"
             android:text="15" />
 
@@ -40,33 +43,64 @@
             android:id="@+id/txt2img"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAllCaps="false"
-            android:text="txt2img" />
+            android:backgroundTint="#40C4FF"
+            android:text="Text to Image"
+            android:textAllCaps="false" />
 
         <Button
             android:id="@+id/img2img"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAllCaps="false"
-            android:text="img2img" />
+            android:backgroundTint="#FFAB40"
+            android:text="Image to Image"
+            android:textAllCaps="false" />
 
     </LinearLayout>
 
-    <EditText
-        android:id="@+id/pos"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:ems="10"
-        android:hint="Positive Prompt (using default)"
-        android:inputType="textPersonName" />
+        android:orientation="horizontal">
 
-    <EditText
-        android:id="@+id/neg"
+        <EditText
+            android:id="@+id/pos"
+            android:layout_width="318dp"
+            android:layout_height="wrap_content"
+            android:ems="10"
+            android:hint="Positive Prompt (using default)"
+            android:inputType="textPersonName" />
+
+        <Button
+            android:id="@+id/defaultPositive"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:backgroundTint="#FFD740"
+            android:text="Default" />
+
+    </LinearLayout>
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:ems="10"
-        android:hint="Negative Prompt (using default)"
-        android:inputType="textPersonName" />
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/neg"
+            android:layout_width="318dp"
+            android:layout_height="wrap_content"
+            android:ems="10"
+            android:hint="Negative Prompt (using default)"
+            android:inputType="textPersonName" />
+
+        <Button
+            android:id="@+id/defaultNegative"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:backgroundTint="#FF6E40"
+            android:text="Default" />
+    </LinearLayout>
 
     <ImageView
         android:id="@+id/resView"

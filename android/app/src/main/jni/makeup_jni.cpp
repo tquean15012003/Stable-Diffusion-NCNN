@@ -104,11 +104,7 @@ JNIEXPORT jboolean JNICALL Java_com_tencent_makeup_StableDiffusion_txt2imgProces
     int seed = jseed;
     std::string positive_prompt = "" + JavaStringToString(env,jpositivePromptText);
     std::string negative_prompt = "" + JavaStringToString(env,jnegativePrompt);
-    if (positive_prompt == "" || negative_prompt == "")
-    {
-        positive_prompt = "floating hair, portrait, ((loli)), ((one girl)), cute face, hidden hands, asymmetrical bangs, beautiful detailed eyes, eye shadow, hair ornament, ribbons, bowties, buttons, pleated skirt, (((masterpiece))), ((best quality)), colorful";
-        negative_prompt = "((part of the head)), ((((mutated hands and fingers)))), deformed, blurry, bad anatomy, disfigured, poorly drawn face, mutation, mutated, extra limb, ugly, poorly drawn hands, missing limb, blurry, floating limbs, disconnected limbs, malformed hands, blur, out of focus, long neck, long body, Octane renderer, lowres, bad anatomy, bad hands, text";
-    }
+
 
     ncnn::Mat cond = prompt_slover.get_conditioning(positive_prompt);
     ncnn::Mat uncond = prompt_slover.get_conditioning(negative_prompt);

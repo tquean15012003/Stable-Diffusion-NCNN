@@ -44,7 +44,8 @@ public class MainActivity extends Activity
     private EditText negativePromptText;
     private EditText stepText;
     private EditText seedText;
-
+    final static String defaultPositivePrompt = "apple on the table, realistic, highly detailed, vibrant colors, natural lighting, shiny surface, wooden table, shadows, high quality, photorealistic, masterpiece";
+    final static String defaultNegativePrompt = "blurry, deformed, bad anatomy, disfigured, poorly drawn, mutation, mutated, extra limb, ugly, missing limb, blurry, floating, disconnected, malformed, blur, out of focus, bad lighting, unrealistic, text";
     private Bitmap showBitmap;
 
     private StableDiffusion sd = new StableDiffusion();
@@ -74,10 +75,28 @@ public class MainActivity extends Activity
         imageView = (ImageView) findViewById(R.id.resView);
         positivePromptText = (EditText) findViewById(R.id.pos);
         negativePromptText = (EditText) findViewById(R.id.neg);
+
         stepText = (EditText) findViewById(R.id.step);
         seedText = (EditText) findViewById(R.id.seed);
 
+
         showBitmap = Bitmap.createBitmap(256,256,Bitmap.Config.ARGB_8888);
+
+        Button buttonDefaultPositive = (Button) findViewById(R.id.defaultPositive);
+        buttonDefaultPositive.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                positivePromptText.setText(MainActivity.defaultPositivePrompt);
+            }
+        });
+
+        Button buttonDefaultNegative = (Button) findViewById(R.id.defaultNegative);
+        buttonDefaultNegative.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                negativePromptText.setText(MainActivity.defaultNegativePrompt);
+            }
+        });
 
         Button buttonInitImage = (Button) findViewById(R.id.init);
         buttonInitImage.setOnClickListener(new View.OnClickListener() {
@@ -97,12 +116,15 @@ public class MainActivity extends Activity
                 new Thread(new Runnable() {
                     public void run() {
 
-                        String postivaePrompt = positivePromptText.getText().toString();
+                        String positivePrompt = positivePromptText.getText().toString();
                         String negativePrompt = negativePromptText.getText().toString();
+                        if (positivePrompt.isEmpty() || negativePrompt.isEmpty()) {
+                            return;
+                        }
                         int step = Integer.valueOf(stepText.getText().toString());
                         int seed = Integer.valueOf(seedText.getText().toString());
 
-                        sd.txt2imgProcess(showBitmap,step,seed,postivaePrompt,negativePrompt);
+                        sd.txt2imgProcess(showBitmap,step,seed,positivePrompt,negativePrompt);
 
                         final Bitmap styledImage = showBitmap.copy(Bitmap.Config.ARGB_8888,true);
                         imageView.post(new Runnable() {
@@ -124,12 +146,17 @@ public class MainActivity extends Activity
                 new Thread(new Runnable() {
                     public void run() {
 
-                        String postivaePrompt = positivePromptText.getText().toString();
+                        String positivePrompt = positivePromptText.getText().toString();
                         String negativePrompt = negativePromptText.getText().toString();
+
+                        if (positivePrompt.isEmpty() || negativePrompt.isEmpty()) {
+                            return;
+                        }
+
                         int step = Integer.valueOf(stepText.getText().toString());
                         int seed = Integer.valueOf(seedText.getText().toString());
 
-                        sd.img2imgProcess(showBitmap,step,seed,postivaePrompt,negativePrompt);
+                        sd.img2imgProcess(showBitmap,step,seed,positivePrompt,negativePrompt);
 
                         final Bitmap styledImage = showBitmap.copy(Bitmap.Config.ARGB_8888,true);
                         imageView.post(new Runnable() {

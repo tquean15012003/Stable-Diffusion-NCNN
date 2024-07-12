@@ -4,3 +4,67 @@
 *UNetModel-MHA-fp16.bin
 *AutoencoderKL-encoder-512-512-fp16.bin
 *AutoencoderKL-encoder-fp16.bin
+
+# Android Studio specific
+.idea/
+.gradle/
+build/
+local.properties
+*.iml
+
+# User-specific configurations
+.DS_Store
+*.swp
+
+# Android-specific files
+/app/build/
+/*/build/
+
+# Generated files
+/captures/
+/output.json
+*.apk
+*.ap_
+*.hprof
+
+# Local configuration file (sdk path, etc)
+local.properties
+
+# Gradle files
+.gradle/
+/build/
+/gradle/
+/gradlew
+/gradlew.bat
+/settings.gradle
+!gradle-wrapper.jar
+
+# Ignoring lint reports
+lint/intermediates/
+lint/generated/
+
+# Signing key information
+*.jks
+
+# Keystore files
+*.keystore
+
+# IDE-specific
+*.idea/
+/*.ipr
+/*.iws
+/*.iml
+
+# Log files
+*.log
+
+# Google Services (Firebase)
+google-services.json
+
+# Android Studio Navigation Editor Temp files
+.navigation/
+
+# Uncomment if using Proguard
+# proguard/
+
+*/app/.cxx
