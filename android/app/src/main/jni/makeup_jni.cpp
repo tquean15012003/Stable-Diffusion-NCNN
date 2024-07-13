@@ -32,6 +32,7 @@
 #include "diffusion_slover.h"
 #include "decoder_slover.h"
 #include "encoder_slover.h"
+#include "latent_utils.h"
 
 static std::string UTF16StringToUTF8String(const char16_t* chars, size_t len) {
     std::u16string u16_string(chars, len);
@@ -57,6 +58,8 @@ static PromptSlover prompt_slover;
 static EncodeSlover encode_slover;
 static DiffusionSlover diffusion_slover;
 static DecodeSlover decode_slover;
+static LatentUtils latent_utils;
+
 extern "C" {
 
 JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved)
@@ -107,9 +110,15 @@ JNIEXPORT jboolean JNICALL Java_com_tencent_makeup_StableDiffusion_txt2imgProces
 
 
     ncnn::Mat cond = prompt_slover.get_conditioning(positive_prompt);
-    ncnn::Mat uncond = prompt_slover.get_conditioning(negative_prompt);
+    ncnn::Mat unCond = prompt_slover.get_conditioning(negative_prompt);
 
-    ncnn::Mat sample = diffusion_slover.sampler_txt2img(seed, step, cond, uncond, true, 4);
+//  Find the closest prompt in the in-memory store
+    std::string mostSimilarSentence = latent_utils.findMostSimilarSentence(cond);
+    latent_utils.addSentenceToStore(positive_prompt, cond);
+    __android_log_print(ANDROID_LOG_INFO, "SD", "Sentence %s", mostSimilarSentence.c_str());
+
+    ncnn::Mat sample = diffusion_slover.sampler_txt2img(seed, step, cond, unCond, true, 4);
+//    ncnn:: Mat sample = cond;
 
     ncnn::Mat x_samples_ddim = decode_slover.decode(sample);
 
@@ -141,11 +150,11 @@ JNIEXPORT jboolean JNICALL Java_com_tencent_makeup_StableDiffusion_img2imgProces
 
 
     ncnn::Mat cond = prompt_slover.get_conditioning(positive_prompt);
-    ncnn::Mat uncond = prompt_slover.get_conditioning(negative_prompt);
+    ncnn::Mat unCond = prompt_slover.get_conditioning(negative_prompt);
 
     vector<ncnn::Mat> init_latents = encode_slover.encode(init_image);
 
-    ncnn::Mat sample = diffusion_slover.sampler_img2img(seed, step, cond, uncond, init_latents);
+    ncnn::Mat sample = diffusion_slover.sampler_img2img(seed, step, cond, unCond, init_latents);
 
     ncnn::Mat x_samples_ddim = decode_slover.decode(sample);
 
