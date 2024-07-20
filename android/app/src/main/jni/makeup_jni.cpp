@@ -111,14 +111,35 @@ JNIEXPORT jboolean JNICALL Java_com_tencent_makeup_StableDiffusion_txt2imgProces
 
     ncnn::Mat cond = prompt_slover.get_conditioning(positive_prompt);
     ncnn::Mat unCond = prompt_slover.get_conditioning(negative_prompt);
+    latent_utils.print_mat_info(cond);
+    bool exist = latent_utils.exists(positive_prompt);
+    if (exist) {
+        __android_log_print(ANDROID_LOG_INFO, "SD", "Hello");
+    }
 
 //  Find the closest prompt in the in-memory store
-    std::string mostSimilarSentence = latent_utils.findMostSimilarSentence(cond);
-    latent_utils.addSentenceToStore(positive_prompt, cond);
-    __android_log_print(ANDROID_LOG_INFO, "SD", "Sentence %s", mostSimilarSentence.c_str());
+    std::pair<std::string, float> result = latent_utils.find_most_similar_sentence(cond);
+    std::string most_similar_sentence = result.first;
+    float score = result.second;
+    ncnn:: Mat sample;
 
-    ncnn::Mat sample = diffusion_slover.sampler_txt2img(seed, step, cond, unCond, true, 4);
-//    ncnn:: Mat sample = cond;
+    if (score > 0.95) {
+        __android_log_print(ANDROID_LOG_INFO, "SD", "Reuse the result from sentence %s", most_similar_sentence.c_str());
+        sample = latent_utils.get_result_store_item(most_similar_sentence);
+    } else if (score > 0.8) {
+        __android_log_print(ANDROID_LOG_INFO, "SD", "Reuse some denoising step from result from sentence %s", most_similar_sentence.c_str());
+        latent_utils.add_sentence_to_store(positive_prompt, cond);
+//        sample = diffusion_slover.sampler_txt2img(seed, step, cond, unCond, mostSimilarSentence);
+        sample = cond;
+        latent_utils.add_result_to_store(positive_prompt, sample);
+    } else {
+        __android_log_print(ANDROID_LOG_INFO, "SD", "Generating from beginning without reusing");
+        latent_utils.add_sentence_to_store(positive_prompt, cond);
+//        sample = diffusion_slover.sampler_txt2img(seed, step, cond, unCond, mostSimilarSentence);
+        sample = cond;
+        latent_utils.add_result_to_store(positive_prompt, sample);
+    }
+
 
     ncnn::Mat x_samples_ddim = decode_slover.decode(sample);
 

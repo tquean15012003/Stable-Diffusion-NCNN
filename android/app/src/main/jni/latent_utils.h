@@ -13,19 +13,25 @@
 class LatentUtils {
 public:
     // Adds a sentence and its latent matrix to the store
-    void addSentenceToStore(const std::string& sentence, const ncnn::Mat& mat);
+    void add_sentence_to_store(const std::string& sentence, const ncnn::Mat& mat);
+    ncnn::Mat get_sentence_store_item(const std::string& sentence);
+    void add_result_to_store(const std::string& sentence, const ncnn::Mat& mat);
+    ncnn::Mat get_result_store_item(const std::string& sentence);
+    bool exists(const std::string& key);
 
     // Prints the matrix details
-    void printMatInfo(const ncnn::Mat& mat, const char* tag);
+    void print_mat_info(const ncnn::Mat& mat);
+    void print_all();
 
     // Finds the most similar matrix in the store to a given matrix and returns the associated sentence
-    std::string findMostSimilarSentence(const ncnn::Mat& mat);
+    std::pair<std::string, float> find_most_similar_sentence(const ncnn::Mat& mat);
 
 private:
-    std::unordered_map<std::string, ncnn::Mat> sentenceStore;
+    std::unordered_map<std::string, ncnn::Mat> sentence_store;
+    std::unordered_map<std::string, ncnn::Mat> result_store;
 
     // Calculates cosine similarity between two matrices
-    float cosineSimilarity(const ncnn::Mat& mat1, const ncnn::Mat& mat2);
+    float cosine_similarity(const ncnn::Mat& mat1, const ncnn::Mat& mat2);
 };
 
 #endif //ANDROID_LATENT_UTILS_H
