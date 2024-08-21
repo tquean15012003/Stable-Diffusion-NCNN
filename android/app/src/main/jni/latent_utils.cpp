@@ -25,6 +25,15 @@ ncnn::Mat LatentUtils::get_result_store_item(const std::string& sentence) {
     return it->second.clone();
 }
 
+void LatentUtils::add_denoised_to_store(const std::string &sentence, const ncnn::Mat &mat) {
+    denoised_store[sentence] = mat.clone();
+}
+
+ncnn::Mat LatentUtils::get_denoised_item(const std::string &sentence) {
+    auto it = denoised_store.find(sentence);
+    return it->second.clone();
+}
+
 void LatentUtils::print_all() {
     for (const auto& pair : sentence_store) {
         __android_log_print(ANDROID_LOG_INFO, "MatStorage", "Key: %s", pair.first.c_str());
@@ -59,7 +68,6 @@ std::pair<std::string, float> LatentUtils::find_most_similar_sentence(const ncnn
     float best_similarity = -1.0f;
 
     for (const auto& pair : sentence_store) {
-        print_mat_info(pair.second);
         float similarity = cosine_similarity(mat, pair.second);
         if (similarity > best_similarity) {
             best_similarity = similarity;
@@ -105,3 +113,5 @@ float LatentUtils::cosine_similarity(const ncnn::Mat& mat1, const ncnn::Mat& mat
 
     return dot_product / (magnitude1 * magnitude2);
 }
+
+LatentUtils latent_utils;

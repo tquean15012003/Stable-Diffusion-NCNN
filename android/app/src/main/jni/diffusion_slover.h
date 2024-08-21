@@ -20,7 +20,7 @@ class DiffusionSlover
 public:
     int load(AAssetManager* mgr, std::string bin);
 
-    ncnn::Mat sampler_txt2img(int seed, int step, ncnn::Mat& c, ncnn::Mat& uc, bool is_reuse, int no_reuse);
+    std::pair<ncnn::Mat, ncnn::Mat> sampler_txt2img(int seed, int step, ncnn::Mat& c, ncnn::Mat& uc, const string& re_use_sentence);
     ncnn::Mat sampler_img2img(int seed, int step, ncnn::Mat& c, ncnn::Mat& uc, vector<ncnn::Mat>& init);
 
 private:

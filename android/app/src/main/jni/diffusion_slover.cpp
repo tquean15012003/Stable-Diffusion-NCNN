@@ -1,4 +1,5 @@
 #include "diffusion_slover.h"
+#include "latent_utils.h"
 
 int DiffusionSlover::load(AAssetManager* mgr, std::string bin)
 {
@@ -177,7 +178,7 @@ ncnn::Mat DiffusionSlover::CFGDenoiser_CompVisDenoiser(ncnn::Mat& input, float s
 
 static vector<ncnn::Mat> saved_steps;
 
-ncnn::Mat DiffusionSlover::sampler_txt2img(int seed, int step, ncnn::Mat& c, ncnn::Mat& uc, bool is_reuse, int no_reuse)
+std::pair<ncnn::Mat, ncnn::Mat> DiffusionSlover::sampler_txt2img(int seed, int step, ncnn::Mat& c, ncnn::Mat& uc, const string& re_use_sentence)
 {
 	// t_to_sigma
 	vector<float> sigma(step);
@@ -195,34 +196,27 @@ ncnn::Mat DiffusionSlover::sampler_txt2img(int seed, int step, ncnn::Mat& c, ncn
 	ncnn::Mat x_mat = randn_4_32_32(seed % 1000);
 	float _norm_[4] = { sigma[0], sigma[0], sigma[0], sigma[0] };
 	x_mat.substract_mean_normalize(0, _norm_);
-
+    ncnn::Mat denoise_x_mat;
 	// sample_euler_ancestral
 	{
 		for (int i = 0; i < sigma.size() - 1; i++) {
-            ncnn::Mat denoised;
-            double t1 = ncnn::get_current_time();
-            // Simplified logic
-            if (is_reuse && !saved_steps.empty()) {
-                // Check if we should skip this step or use a saved step
-                if (i < no_reuse) {
-                    __android_log_print(ANDROID_LOG_ERROR, "SD", "Step:%2d/%d\t%s", i+1, sigma.size()-1, "skipped");
+            if (!re_use_sentence.empty()) {
+                if (i < 2) {
+                    __android_log_print(ANDROID_LOG_INFO, "SD", "Step:%2d skipped", i+1);
                     continue;
-                } else if (i == no_reuse) {
-                    denoised = saved_steps[0].clone();
-                    saved_steps.clear();
-                } else {
-                    denoised = CFGDenoiser_CompVisDenoiser(x_mat, sigma[i], c, uc);
-                }
-            } else {
-                // Perform the regular denoising process
-                __android_log_print(ANDROID_LOG_ERROR, "SD", "Run normally");
-                denoised = CFGDenoiser_CompVisDenoiser(x_mat, sigma[i], c, uc);
-                if (i == no_reuse) {
-                    saved_steps.push_back(denoised.clone());
+                } else if (i == 2) {
+                    __android_log_print(ANDROID_LOG_INFO, "SD", "Step:%2d reused", i+1);
+                    x_mat = latent_utils.get_denoised_item(re_use_sentence);
+                    continue;
                 }
             }
+
+            double t1 = ncnn::get_current_time();
+            ncnn::Mat denoised = CFGDenoiser_CompVisDenoiser(x_mat, sigma[i], c, uc);
 			double t2 = ncnn::get_current_time();
-			__android_log_print(ANDROID_LOG_ERROR, "SD", "Step:%2d/%d\t%fms", i+1, sigma.size()-1, t2-t1);
+			__android_log_print(ANDROID_LOG_INFO, "SD", "Step:%2d/%zu\t%fms", i+1, sigma.size()-1, t2-t1);
+
+
 
 			float sigma_up = min(sigma[i + 1], sqrt(sigma[i + 1] * sigma[i + 1] * (sigma[i] * sigma[i] - sigma[i + 1] * sigma[i + 1]) / (sigma[i] * sigma[i])));
 			float sigma_down = sqrt(sigma[i + 1] * sigma[i + 1] - sigma_up * sigma_up);
@@ -240,12 +234,17 @@ ncnn::Mat DiffusionSlover::sampler_txt2img(int seed, int step, ncnn::Mat& c, ncn
 					r_ptr++;
 				}
 			}
+
+            if (i == 2 and re_use_sentence.empty()) {
+                denoise_x_mat = x_mat.clone();
+            }
 		}
 	}
 
 	ncnn::Mat fuck_x;
 	fuck_x.clone_from(x_mat);
-	return fuck_x;
+    return std::make_pair(fuck_x, denoise_x_mat);
+//	return fuck_x;
 }
 
 ncnn::Mat DiffusionSlover::sampler_img2img(int seed, int step, ncnn::Mat& c, ncnn::Mat& uc, vector<ncnn::Mat>& init)

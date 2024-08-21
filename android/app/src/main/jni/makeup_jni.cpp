@@ -58,7 +58,6 @@ static PromptSlover prompt_slover;
 static EncodeSlover encode_slover;
 static DiffusionSlover diffusion_slover;
 static DecodeSlover decode_slover;
-static LatentUtils latent_utils;
 
 extern "C" {
 
@@ -111,11 +110,6 @@ JNIEXPORT jboolean JNICALL Java_com_tencent_makeup_StableDiffusion_txt2imgProces
 
     ncnn::Mat cond = prompt_slover.get_conditioning(positive_prompt);
     ncnn::Mat unCond = prompt_slover.get_conditioning(negative_prompt);
-    latent_utils.print_mat_info(cond);
-    bool exist = latent_utils.exists(positive_prompt);
-    if (exist) {
-        __android_log_print(ANDROID_LOG_INFO, "SD", "Hello");
-    }
 
 //  Find the closest prompt in the in-memory store
     std::pair<std::string, float> result = latent_utils.find_most_similar_sentence(cond);
@@ -128,15 +122,16 @@ JNIEXPORT jboolean JNICALL Java_com_tencent_makeup_StableDiffusion_txt2imgProces
         sample = latent_utils.get_result_store_item(most_similar_sentence);
     } else if (score > 0.8) {
         __android_log_print(ANDROID_LOG_INFO, "SD", "Reuse some denoising step from result from sentence %s", most_similar_sentence.c_str());
-        latent_utils.add_sentence_to_store(positive_prompt, cond);
-//        sample = diffusion_slover.sampler_txt2img(seed, step, cond, unCond, mostSimilarSentence);
-        sample = cond;
+        std::pair<ncnn::Mat, ncnn::Mat> denoised_result = diffusion_slover.sampler_txt2img(seed, step, cond, unCond, most_similar_sentence);
+        sample = denoised_result.first;
         latent_utils.add_result_to_store(positive_prompt, sample);
     } else {
         __android_log_print(ANDROID_LOG_INFO, "SD", "Generating from beginning without reusing");
         latent_utils.add_sentence_to_store(positive_prompt, cond);
-//        sample = diffusion_slover.sampler_txt2img(seed, step, cond, unCond, mostSimilarSentence);
-        sample = cond;
+        std::pair<ncnn::Mat, ncnn::Mat> denoised_result = diffusion_slover.sampler_txt2img(seed, step, cond, unCond, "");
+        sample = denoised_result.first;
+        ncnn::Mat denoised = denoised_result.second;
+        latent_utils.add_denoised_to_store(positive_prompt, denoised);
         latent_utils.add_result_to_store(positive_prompt, sample);
     }
 
