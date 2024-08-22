@@ -44,7 +44,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:backgroundTint="#40C4FF"
-            android:text="Text to Image"
+            android:text="Text"
             android:textAllCaps="false" />
 
         <Button
@@ -52,7 +52,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:backgroundTint="#FFAB40"
-            android:text="Image to Image"
+            android:text="Image"
             android:textAllCaps="false" />
 
     </LinearLayout>
@@ -64,10 +64,10 @@
 
         <EditText
             android:id="@+id/pos"
-            android:layout_width="318dp"
+            android:layout_width="255dp"
             android:layout_height="wrap_content"
             android:ems="10"
-            android:hint="Positive Prompt (using default)"
+            android:hint="Positive Prompt"
             android:inputType="textPersonName" />
 
         <Button
@@ -87,10 +87,10 @@
 
         <EditText
             android:id="@+id/neg"
-            android:layout_width="318dp"
+            android:layout_width="255dp"
             android:layout_height="wrap_content"
             android:ems="10"
-            android:hint="Negative Prompt (using default)"
+            android:hint="Negative Prompt"
             android:inputType="textPersonName" />
 
         <Button
