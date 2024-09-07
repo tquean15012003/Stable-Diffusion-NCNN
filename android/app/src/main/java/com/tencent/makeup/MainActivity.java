@@ -29,26 +29,51 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.MediaController;
+import android.widget.VideoView;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.concurrent.TimeUnit;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class MainActivity extends Activity
 {
     private ImageView imageView;
+    private VideoView videoView;
+    private FrameLayout videoContainer;
     private EditText positivePromptText;
     private EditText negativePromptText;
     private EditText stepText;
     private EditText seedText;
+    private String mp4Url;
     final static String defaultPositivePrompt = "apple on the table, realistic, highly detailed, vibrant colors, natural lighting, shiny surface, wooden table, shadows, high quality, photorealistic, masterpiece";
     final static String defaultNegativePrompt = "blurry, deformed, bad anatomy, disfigured, poorly drawn, mutation, mutated, extra limb, ugly, missing limb, blurry, floating, disconnected, malformed, blur, out of focus, bad lighting, unrealistic, text";
     private Bitmap showBitmap;
+    private static final int MAX_RETRIES = 20;
+    private static final long RETRY_DELAY_MS = 5000;
 
     private StableDiffusion sd = new StableDiffusion();
+
+    interface VideoFetchCallback {
+        void onVideoLinkFetched(String videoUrl);
+    }
+
     /** Called when the activity is first created. */
     @SuppressLint("MissingInflatedId")
     @Override
@@ -102,6 +127,8 @@ public class MainActivity extends Activity
         buttonInitImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View arg0) {
+                videoView.setVisibility(View.GONE);
+                imageView.setVisibility(View.VISIBLE);
                 Intent i = new Intent(Intent.ACTION_PICK);
                 i.setType("image/*");
                 startActivityForResult(i, 1);
@@ -112,6 +139,9 @@ public class MainActivity extends Activity
         buttonTXT2IMG.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View arg0) {
+                videoView.setVisibility(View.GONE);
+                imageView.setVisibility(View.VISIBLE);
+
                 getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                 new Thread(new Runnable() {
                     public void run() {
@@ -142,6 +172,8 @@ public class MainActivity extends Activity
         buttonIMG2IMG.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View arg0) {
+                videoView.setVisibility(View.GONE);
+                imageView.setVisibility(View.VISIBLE);
                 getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                 new Thread(new Runnable() {
                     public void run() {
@@ -169,7 +201,172 @@ public class MainActivity extends Activity
                 }).start();
             }
         });
+        videoContainer = (FrameLayout) findViewById(R.id.frame_layout);
 
+        imageView = (ImageView) findViewById(R.id.resView);
+        videoView = (VideoView) findViewById(R.id.videoView);
+        videoView.setVisibility(View.GONE);
+        imageView.setVisibility(View.GONE);
+
+        Button videoButton = (Button) findViewById(R.id.txt2video);
+        videoButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                videoView.setVisibility(View.VISIBLE);
+                imageView.setVisibility(View.GONE);
+                fetchVideoLink(new VideoFetchCallback() {
+                    @Override
+                    public void onVideoLinkFetched(String videoUrl) {
+                        // Start polling the video URL for availability
+                        pollVideoAvailability(videoUrl, videoView);
+                    }
+                });
+            }
+        });
+    }
+
+    // Fetch the video link from the API
+    private void fetchVideoLink(VideoFetchCallback callback) {
+//        OkHttpClient client = new OkHttpClient();
+//        Request request = new Request.Builder()
+//                .url("https://pub-3626123a908346a7a8be8d9295f44e26.r2.dev/video_generations/b34f8014-ff42-4efa-85ea-3f8815bb6a28.mp4") // Replace with your actual API URL
+//                .build();
+//
+//        client.newCall(request).enqueue(new Callback() {
+//            @Override
+//            public void onFailure(Call call, IOException e) {
+//                e.printStackTrace();
+//            }
+//
+//            @Override
+//            public void onResponse(Call call, Response response) throws IOException {
+//                try {
+//                    if (response.isSuccessful()) {
+////                        String videoUrl = response.body().string(); // Assuming the response contains the URL as plain text
+//                        String videoUrl = "https://pub-3626123a908346a7a8be8d9295f44e26.r2.dev/video_generations/b34f8014-ff42-4efa-85ea-3f8815bb6a28.mp4";
+//                        runOnUiThread(() -> callback.onVideoLinkFetched(videoUrl));
+//                    }
+//                } finally {
+//                    // Always close the response to avoid leaks
+//                    response.close();
+//                }
+//            }
+//        });
+
+        OkHttpClient client = new OkHttpClient.Builder()
+                .connectTimeout(120, TimeUnit.SECONDS) // Set the connection timeout
+                .readTimeout(300, TimeUnit.SECONDS)    // Set the read timeout
+                .writeTimeout(300, TimeUnit.SECONDS)   // Set the write timeout
+                .build();
+
+        // Create the request body in JSON format
+        JSONObject jsonBody = new JSONObject();
+        try {
+            jsonBody.put("model_id", "zeroscope");
+            jsonBody.put("prompt", this.positivePromptText.getText().toString());
+            jsonBody.put("negative_prompt", this.negativePromptText.getText().toString());
+            jsonBody.put("height", 320);
+            jsonBody.put("width", 512);
+            jsonBody.put("num_frames", 16);
+            jsonBody.put("num_inference_steps", 20);
+            jsonBody.put("guidance_scale", 7);
+            jsonBody.put("upscale_height", 640);
+            jsonBody.put("upscale_width", 1024);
+            jsonBody.put("upscale_strength", 0.6);
+            jsonBody.put("upscale_guidance_scale", 12);
+            jsonBody.put("upscale_num_inference_steps", 20);
+            jsonBody.put("output_type", "mp4");
+            jsonBody.put("webhook", JSONObject.NULL);
+            jsonBody.put("track_id", JSONObject.NULL);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // Set the media type to JSON
+        MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+        RequestBody requestBody = RequestBody.create(JSON, jsonBody.toString());
+
+        // Create the POST request
+        Request request = new Request.Builder()
+                .url("https://modelslab.com/api/v6/video/text2video") // Replace with your actual POST API URL
+                .post(requestBody)
+                .build();
+
+        // Execute the request
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                e.printStackTrace();
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                try {
+                    if (response.isSuccessful()) {
+                        // Parse the response as a JSONObject
+                        String responseBody = response.body().string();
+                        System.out.println(responseBody);
+                        JSONObject jsonResponse = new JSONObject(responseBody);
+
+                        // Extract the first link from the 'output' array
+                        JSONArray outputArray = jsonResponse.getJSONArray("future_links");
+                        String videoUrl = outputArray.getString(0); // Get the first link
+                        System.out.println(videoUrl);
+                        // Pass the video URL back to the UI thread
+                        runOnUiThread(() -> callback.onVideoLinkFetched(videoUrl));
+                    } else {
+                        // Handle unsuccessful responses if needed
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    response.close();
+                }
+            }
+        });
+    }
+
+    private void pollVideoAvailability(String videoUrl, VideoView videoView) {
+        OkHttpClient client = new OkHttpClient();
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                int attempts = 0;
+
+                while (attempts < MAX_RETRIES) {
+                    Request request = new Request.Builder()
+                            .url(videoUrl) // The video URL from the API
+                            .build();
+
+                    try {
+                        Response response = client.newCall(request).execute();
+
+                        // If the video link is ready (i.e., not 404), load the video
+                        if (response.isSuccessful()) {
+                            runOnUiThread(() -> {
+                                // Load and play the video
+                                Uri uri = Uri.parse(videoUrl);
+                                videoView.setVideoURI(uri);
+                                videoView.setMediaController(new MediaController(MainActivity.this));
+                                videoView.start();
+
+                            });
+                            break; // Exit the loop once the video is ready
+                        } else {
+                            // If it's a 404, the video is not ready, retry after delay
+                            Log.e("MainActivity", "Error: " + response.code());
+                            attempts++;
+                            Thread.sleep(RETRY_DELAY_MS); // Wait before retrying
+                        }
+
+                    } catch (IOException | InterruptedException e) {
+                        e.printStackTrace();
+                        break;
+                    }
+                }
+            }
+        }).start();
     }
 
     @Override

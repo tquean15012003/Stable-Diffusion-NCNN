@@ -62,6 +62,19 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
+        <Button
+            android:id="@+id/txt2video"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Video" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
         <EditText
             android:id="@+id/pos"
             android:layout_width="255dp"
@@ -102,11 +115,23 @@
             android:text="Default" />
     </LinearLayout>
 
-    <ImageView
-        android:id="@+id/resView"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:layout_weight="1"
-        android:background="#FFFFFF" />
+    <FrameLayout
+        android:id="@+id/frame_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/resView"
+            android:layout_width="match_parent"
+            android:layout_height="1024px"
+            android:layout_weight="1"
+            android:background="#FFFFFF" />
+
+        <VideoView
+            android:id="@+id/videoView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="-50px" />
+    </FrameLayout>
 
 </LinearLayout>
